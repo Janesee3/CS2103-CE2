@@ -39,28 +39,88 @@ import java.io.FileWriter;
 
 import java.io.IOException;
 
+import java.io.PrintWriter;
+
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class TextBuddy {
 	
-	private String fileName_;
+	/* Private Class Attributes */
+	
+	//private String fileName_;
 	private File file_;
 	private ArrayList<String> listOfLines_;
 	private boolean isRunning_;
 	
+	/* Static Utility */
+	
+	private static Scanner sc;
+	
+	/* Static String Constants */
+	
+	// Command Feedback Messages
+	private static final String MESSAGE_WELCOME = "Welcome to TextBuddy. %s is ready for use\n";
+	private static final String MESSAGE_ENTER_COMMAND = "command: "; 
+	private static final String MESSAGE_ADDED = "added to %s: \"%s\"\n";
+	private static final String MESSAGE_DELETED = "deleted from %s: \"%s\"\n";
+	private static final String MESSAGE_CLEAR = "all content deleted from %s\n";
+	private static final String MESSAGE_DISPLAY_LINE = "%d. %s\n";
+	private static final String MESSAGE_DISPLAY_FAIL = "%s is empty\n";
+	
+	
+	// Command Identifiers
+	private static final String COMMAND_ADD = "add";
+	private static final String COMMAND_DELETE = "delete";
+	private static final String COMMAND_CLEAR = "clear";
+	private static final String COMMAND_DISPLAY = "display";
+	private static final String COMMAND_EXIT = "exit";
+	
+	
+	// Error/Exception Messages
+	private static final String MESSAGE_INVALID_COMMAND = "Invalid command!";
+	private static final String MESSAGE_INVALID_LINE_NUMBER = "Invalid line number!";
+	private static final String MESSAGE_LINE_NOT_FOUND = "No such line in file!";
+	private static final String MESSAGE_NO_FILE_INPUT = "No .txt file inputed.";
+	private static final String MESSAGE_IOEXCEPTION = "IO exception encountered.";
+	private static final String MESSAGE_FILE_NOT_FOUND = "File is missing!";
+	
+	
+	/* Constructor */
+		
 	public TextBuddy(String fileName) {
-		fileName_ = fileName;
-		file_ = new File(fileName);
+		//fileName_ = fileName;
+		file_ = initialiseFile(fileName);
 		listOfLines_ = new ArrayList<String>();
 		isRunning_ = true;
+		sc = new Scanner(System.in);
 	}
 	
-	private void setFile(File newFile) {
-		file_ = newFile;	
+	/* Ultily Methods */
+	
+	/**
+	 * Initialise a new file instance and create an actual file
+	 * given the input pathname
+	 * 
+	 * @param pathName	pathname of the file to be created
+	 */
+	private File initialiseFile(String pathName) {
+		File file = new File(pathName);
+		
+		try {
+			file.createNewFile();
+		} 
+		
+		catch (IOException e) {
+			System.out.println(MESSAGE_IOEXCEPTION);
+		}
+		
+		return file;
 	}
 	
+	/* Command Methods */
+
 	/** 
 	 * Adds the input line of text into the .txt file.
 	 * 
@@ -68,20 +128,19 @@ public class TextBuddy {
 	 */
 	private void add(String text) {
 		listOfLines_.add(text);
-		FileWriter fw;
 		
 		try {
-			fw = new FileWriter(file_);
-			fw.write(text);
-			fw.close();
-		} 
-		
-		catch (IOException e) {
-			e.printStackTrace();
+			PrintWriter pw = new PrintWriter(file_);
+			for (int i = 0; i < listOfLines_.size(); i++) {
+				pw.println(listOfLines_.get(i));
+			}
+			pw.close();
+			
+		} catch (FileNotFoundException e) {
+			System.out.println(MESSAGE_IOEXCEPTION);
 		}
-		
-		System.out.println("added to " + fileName_
-							+ ": \"" + text + "\"");
+			
+		System.out.printf(MESSAGE_ADDED, file_.getName(), text);
 	}
 	
 	/** 
@@ -90,56 +149,34 @@ public class TextBuddy {
 	 * @param lineNumber 	Number of the line to be removed.
 	 */
 	private void delete(int lineNumber) {
-				
-		try {
-			
+		
+		try {			
+			// delete line from internal list first
 			String lineToDelete = listOfLines_.get(lineNumber - 1);
-			listOfLines_.remove(lineNumber - 1);
-			File tempFile = new File(file_.getAbsolutePath() + ".tmp");
+			listOfLines_.remove(lineNumber - 1);	
 
-			BufferedReader br = new BufferedReader(new FileReader(file_));
-			FileWriter fw = new FileWriter(tempFile);
+			// Overwrite file entirely by rewriting the updated list of lines into the file
 
-			String currLine = null;
-
-			// read from original file and write to temp file
-			// unless line matches line to be removed.
-			while ((currLine = br.readLine()) != null) {
-
-				if (!currLine.trim().equals(lineToDelete)) {
-					fw.write(currLine);
-				}
+			PrintWriter pw = new PrintWriter(file_);
+			
+			for (int i = 0; i < listOfLines_.size(); i++) {
+				pw.println(listOfLines_.get(i));
 			}
-			
-			fw.close();
-			br.close();
-
-			//Replace original with the new file.
-
-			file_.delete();
-			setFile(tempFile);
-			
-			
-			System.out.println("deleted from " + fileName_
-								+ ": \"" + lineToDelete + "\"");
+			pw.close();
+			System.out.printf(MESSAGE_DELETED, file_.getName(), lineToDelete);
+		
 		}
 		
 		catch (FileNotFoundException ex) {
-			ex.printStackTrace();
-		}
-		
-		catch (IOException ex) {
-			ex.printStackTrace();
+			System.out.println(MESSAGE_FILE_NOT_FOUND);
 		}
 		
 		catch (InputMismatchException ex) {
-			System.out.println("Invalid line number!");
-			ex.printStackTrace();
+			System.out.println(MESSAGE_INVALID_LINE_NUMBER);
 		}
 		
 		catch (IndexOutOfBoundsException ex) {
-			System.out.println("No such line in file!");
-			ex.printStackTrace();
+			System.out.println(MESSAGE_LINE_NOT_FOUND);
 		}
 	}
 	
@@ -148,18 +185,18 @@ public class TextBuddy {
 	 */	
 	private void clear() {
 		
-		// Create new file
-		File tempFile = new File(file_.getAbsolutePath() + ".tmp");
-		
-		// Delete original file and rename new file
-		
-		tempFile.renameTo(file_);
-		file_.delete();
-		setFile(tempFile);
-		
+		// clear internal list first
 		listOfLines_.clear();
 		
-		System.out.println("all content deleted from " + fileName_);
+		// Use PrintWriter object to initiate a rewrite on the file, 
+		// effectively clearing it of its original content
+		try {
+			PrintWriter pw = new PrintWriter(file_);
+		} catch (FileNotFoundException e) {
+			System.out.println(MESSAGE_IOEXCEPTION);
+		}
+
+		System.out.printf(MESSAGE_CLEAR, file_.getName());
 	}
 	
 	/**
@@ -172,44 +209,55 @@ public class TextBuddy {
 		if (noOfLines > 0) {
 			for (int i = 0; i < noOfLines; i++) {
 				int index = i + 1;
-				System.out.println(index + ". " + listOfLines_.get(i));
+				System.out.printf(MESSAGE_DISPLAY_LINE, index, listOfLines_.get(i));
 			}
 		} else {
-			System.out.println(fileName_ + " is empty");
+			System.out.printf(MESSAGE_DISPLAY_FAIL, file_.getName());
 		}
 	}
+	
+	
+	/* Execution Methods */
 	
 	/**
 	 * Reads in and execute respective commands until exit command is called.
 	 */
 	public void run() {
 		
-		System.out.println("Welcome to TextBuddy. " + fileName_ + " is ready for use");
-		Scanner sc = new Scanner(System.in);
-		
-        while (isRunning_) {
-        	
-        	System.out.print("command: ");
+		System.out.printf(MESSAGE_WELCOME, file_.getName());
+				
+        while (isRunning_) {      	
+        	System.out.printf(MESSAGE_ENTER_COMMAND);
         	String command = sc.next();
-        	
-        	// executes the respective functions according to the inputed command
-        	if (command.equals("add")) {
-        		String addParam = sc.nextLine();
-					add(addParam.trim()); // trim is used to remove white space in front of the text to be added				
-        	} else if (command.equals("delete")) {
-        		delete(sc.nextInt());
-        	} else if (command.equals("clear")) {
-        		clear();
-        	} else if (command.equals("display")) {
-        		display();
-        	} else if (command.equals("exit")) {
-        		isRunning_ = false;
-        	} else {
-        		System.out.println("Invalid Command!");
-        	}
-        }   	
+        	executeCommand(command);
+        }
 	}
-	
+        	
+        	
+    /**
+     * executes the respective functions according to the input command
+     * 
+     *    @param command 	command input by user into the console
+     */
+	private void executeCommand(String command) {
+		
+		if (command.equals(COMMAND_ADD)) {
+    		String addParam = sc.nextLine();
+			add(addParam.trim()); // trim is used to remove white space in front of the text to be added				
+    	} else if (command.equals(COMMAND_DELETE)) {
+    		delete(sc.nextInt());
+    	} else if (command.equals(COMMAND_CLEAR)) {
+    		clear();
+    	} else if (command.equals(COMMAND_DISPLAY)) {
+    		display();
+    	} else if (command.equals(COMMAND_EXIT)) {
+    		isRunning_ = false;
+    	} else {
+    		System.out.println(MESSAGE_INVALID_COMMAND);
+    	}
+    }   	
+		
+
 	public static void main(String[] args) {
 		
 		try {
@@ -218,11 +266,8 @@ public class TextBuddy {
 		} 
 		
 		catch(ArrayIndexOutOfBoundsException e) {
-			System.out.println("No .txt file inputed.");
-			e.printStackTrace();
+			System.out.println(MESSAGE_NO_FILE_INPUT);
 		}
 		
-	}
-	
-		
+	}	
 }
