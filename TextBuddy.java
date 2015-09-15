@@ -58,6 +58,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TextBuddy {
 	
@@ -79,6 +81,8 @@ public class TextBuddy {
 	private static final String MESSAGE_DISPLAY_LINE = "%d. %s\n";
 	private static final String MESSAGE_DISPLAY_FAIL = "%s is empty\n";
 	private static final String MESSAGE_SORTED = "%s has been sorted\n";
+	private static final String MESSAGE_SEARCH_FAIL = "\"%s\" cannot be found in any line";
+	private static final String MESSAGE_SEARCH_DISPLAY = "%s\n";
 	
 	
 	// Command Identifiers
@@ -88,6 +92,7 @@ public class TextBuddy {
 	private static final String COMMAND_DISPLAY = "display";
 	private static final String COMMAND_EXIT = "exit";
 	private static final String COMMAND_SORT = "sort";
+	private static final Object COMMAND_SEARCH = "search";
 	
 	
 	// Error/Exception Messages
@@ -149,6 +154,13 @@ public class TextBuddy {
 		return Integer.valueOf(number);
 	}
 	
+	// returns true if line contains exactly the input word
+	private static boolean isContain(String line, String word) {
+		String pattern = "\\b"+word+"\\b";
+		Pattern p = Pattern.compile(pattern);
+		Matcher m = p.matcher(line);
+		return m.find();
+	}
 	/**
 	 * Initialise a new file instance and create an actual file
 	 * given the input pathname
@@ -283,10 +295,25 @@ public class TextBuddy {
 	 * Searches the text file for lines that contains the input word, and return those lines.
 	 * 
 	 * @param word
-	 * @return lines in text file that contain the input word
+	 * @return lines in text file that contain the input word if exists
 	 */
 	public String search(String word) {
-		return "";
+		int counter = 0; // To keep track of number of lines that contains the input word
+		StringBuilder sb = new StringBuilder();
+		
+		for (int i = 0; i < listOfLines_.size(); i++) {
+			String currLine = listOfLines_.get(i);
+			if (isContain(currLine, word)) {
+				counter++;
+				sb.append(String.format(MESSAGE_SEARCH_DISPLAY, currLine));
+			}
+		}
+		
+		if (listOfLines_.size() == 0 || counter == 0) {
+			sb.append(String.format(MESSAGE_SEARCH_FAIL, word));
+		}
+		
+		return sb.toString();
 	}
 	
 	       	
@@ -316,6 +343,8 @@ public class TextBuddy {
 			feedback = display();
 		} else if (command.equals(COMMAND_SORT)) {
 			feedback = sort();
+		} else if (command.equals(COMMAND_SEARCH)) {
+			feedback = search(getNextLine(fullcommand));
 		} else if (command.equals(COMMAND_EXIT)) {
 			System.exit(0);
 		} else {
