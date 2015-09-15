@@ -7,19 +7,37 @@
  
 	c:>java  TextBuddy mytextfile.txt
 	Welcome to TextBuddy. mytextfile.txt is ready for use
-	command: add little brown fox
-	added to mytextfile.txt: “little brown fox”
+	command: add a
+	added to mytextfile.txt: “a”
 	command: display
-	1. little brown fox
-	command: add jumped over the moon
-	added to mytextfile.txt: “jumped over the moon”
+	1. a
+	command: add c
+	added to mytextfile.txt: “c”
 	command: display
-	1. little brown fox
-	2. jumped over the moon
+	1. a
+	2. c
+	command: add b
+	added to mytextfile.txt: “b”
+	command: display
+	1. a
+	2. c
+	3. b
+	command: sort
+	mytextfile.txt has been sorted
+	command: display
+	1. a
+	2. b
+	3. c
 	command: delete 2
-	deleted from mytextfile.txt: “jumped over the moon”
+	deleted from mytextfile.txt: “second”
 	command: display
-	1. little brown fox
+	1. a
+	2. c
+	command: add a a a
+	added to mytextfile.txt: “a a a”
+	command: search a
+	a
+	a a a
 	command: clear
 	all content deleted from mytextfile.txt
 	command: display

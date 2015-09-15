@@ -44,5 +44,28 @@ public class TextBuddyTest {
 		String expected4 = "testSort3.txt has been sorted\n";
 		assertEquals(expected4, tb3.executeCommand("sort"));
 	}
+	
+	@Test
+	public void testSearch() throws IOException {
+		
+		/* search for a word that is not found in the file */
+		TextBuddy tb = new TextBuddy("testSearch.txt");
+		
+		tb.executeCommand("add apple orange mango");
+		String expected1 = "\" pear\" is cannot be found in any line";
+		assertEquals(expected1, tb.executeCommand("search pear"));
+		
+		/* search for word that exists in multiple sentences */
+		tb.executeCommand("add an apple a day");
+		tb.executeCommand("add keeps the doctor away");
+		tb.executeCommand("add I like apples");
+		String expected2 = "apple orange mango\n" + "an apple a day\n";
+		assertEquals(expected2, tb.executeCommand("search apple"));
+		
+		/* search an empty file */
+		tb.executeCommand("clear");
+		String expected3 = "\" pear\" is cannot be found in any line";
+		assertEquals(expected3, tb.executeCommand("search pear"));
+	}
 }
 	
