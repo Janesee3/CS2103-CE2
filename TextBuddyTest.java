@@ -70,7 +70,7 @@ public class TextBuddyTest {
 		
 		/* search an empty file */
 		tb.executeCommand("clear");
-		String expected4 = "\" pear\" is cannot be found in any line";
+		String expected4 = "\"pear\" cannot be found in any line";
 		assertEquals(expected4, tb.executeCommand("search pear"));
 	}
 }
