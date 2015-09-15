@@ -51,7 +51,7 @@ public class TextBuddy {
 	
 	/* Static Utility */
 	
-	private static Scanner sc;
+	private static Scanner sc = new Scanner(System.in);
 	
 	/* Static String Constants */
 	
@@ -74,31 +74,50 @@ public class TextBuddy {
 	
 	
 	// Error/Exception Messages
-	private static final String MESSAGE_INVALID_COMMAND = "Invalid command!";
 	private static final String MESSAGE_INVALID_LINE_NUMBER = "Invalid line number!";
 	private static final String MESSAGE_LINE_NOT_FOUND = "No such line in file!";
 	private static final String MESSAGE_NO_FILE_INPUT = "No .txt file inputed.";
 	private static final String MESSAGE_IOEXCEPTION = "IO exception encountered.";
-	private static final String MESSAGE_FILE_NOT_FOUND = "File is missing!";
+	private static final String MESSAGE_SORTED = null;
 	
-	
+	public static void main(String[] args) throws IOException {
+		
+		try {
+			TextBuddy tb = new TextBuddy(args[0]);
+			showToUser(String.format(MESSAGE_WELCOME, args[0]));
+			while (true) {
+				showToUser(MESSAGE_ENTER_COMMAND);
+				String command = sc.next();
+				String feedback = tb.executeCommand(command);
+				showToUser(feedback);
+			}
+		}
+
+		catch(ArrayIndexOutOfBoundsException e) {
+			System.out.println(MESSAGE_NO_FILE_INPUT);
+		}	
+	}
+
 	/* Constructor */
 		
 	public TextBuddy(String fileName) {
-		//fileName_ = fileName;
 		file_ = initialiseFile(fileName);
 		listOfLines_ = new ArrayList<String>();
-		isRunning_ = true;
 		sc = new Scanner(System.in);
 	}
 	
-	/* Ultily Methods */
+	/* Utility Methods */
+	
+	public static void showToUser(String text) {
+		System.out.print(text);
+	}
 	
 	/**
 	 * Initialise a new file instance and create an actual file
 	 * given the input pathname
 	 * 
 	 * @param pathName	pathname of the file to be created
+	 * @return File object created with the input pathName
 	 */
 	private File initialiseFile(String pathName) {
 		File file = new File(pathName);
@@ -120,36 +139,39 @@ public class TextBuddy {
 	 * Adds the input line of text into the .txt file.
 	 * 
 	 * @param text	Line of text to be added 
+	 * @return feedback message that line is added
+	 * @throws IOException 
 	 */
-	private void add(String text) {
+	private String add(String text) throws IOException {
 		listOfLines_.add(text);
 		
-		try {
 			PrintWriter pw = new PrintWriter(file_);
 			for (int i = 0; i < listOfLines_.size(); i++) {
 				pw.println(listOfLines_.get(i));
 			}
 			pw.close();
 			
-		} catch (FileNotFoundException e) {
-			System.out.println(MESSAGE_IOEXCEPTION);
-		}
-			
-		System.out.printf(MESSAGE_ADDED, file_.getName(), text);
+		return String.format(MESSAGE_ADDED, file_.getName(), text);
 	}
 	
 	/** 
 	 * Delete a specific line from the .txt file.
 	 * 
 	 * @param lineNumber 	Number of the line to be removed.
+	 * @return feedback message that line is deleted.
+	 * @throws InputMismatchException
+	 * @throws FileNotFoundException 
 	 */
-	private void delete(int lineNumber) {
-		
-		try {			
+	private String delete(int lineNumber) throws InputMismatchException, FileNotFoundException {
+			
 			// delete line from internal list first
+			if (lineNumber >= listOfLines_.size()) {
+				throw new IndexOutOfBoundsException(MESSAGE_LINE_NOT_FOUND);
+			}
+			
 			String lineToDelete = listOfLines_.get(lineNumber - 1);
 			listOfLines_.remove(lineNumber - 1);	
-
+			
 			// Overwrite file entirely by rewriting the updated list of lines into the file
 
 			PrintWriter pw = new PrintWriter(file_);
@@ -157,112 +179,99 @@ public class TextBuddy {
 			for (int i = 0; i < listOfLines_.size(); i++) {
 				pw.println(listOfLines_.get(i));
 			}
-			pw.close();
-			System.out.printf(MESSAGE_DELETED, file_.getName(), lineToDelete);
-		
-		}
-		
-		catch (FileNotFoundException ex) {
-			System.out.println(MESSAGE_FILE_NOT_FOUND);
-		}
-		
-		catch (InputMismatchException ex) {
-			System.out.println(MESSAGE_INVALID_LINE_NUMBER);
-		}
-		
-		catch (IndexOutOfBoundsException ex) {
-			System.out.println(MESSAGE_LINE_NOT_FOUND);
-		}
+			pw.close();			
+			return String.format(MESSAGE_DELETED, file_.getName(), lineToDelete);
 	}
 	
 	/**
 	 * Clear the txt file of its contents entirely.
+	 * 
+	 * @return feedback message that text file is cleared.
+	 * @throws IOException 
 	 */	
-	private void clear() {
+	private String clear() throws IOException {
 		
 		// clear internal list first
 		listOfLines_.clear();
 		
 		// Use PrintWriter object to initiate a rewrite on the file, 
 		// effectively clearing it of its original content
-		try {
-			PrintWriter pw = new PrintWriter(file_);
-		} catch (FileNotFoundException e) {
-			System.out.println(MESSAGE_IOEXCEPTION);
-		}
-
-		System.out.printf(MESSAGE_CLEAR, file_.getName());
+		PrintWriter pw = new PrintWriter(file_);
+		return String.format(MESSAGE_CLEAR, file_.getName());
 	}
 	
 	/**
 	 * Prints out the contents in the txt file, in which every line is numbered.
 	 * If file is empty, user will be notified.
+	 * 
+	 * @return indexed form of lines in the text file 
 	 */
-	private void display() {
+	private String display() {
 		int noOfLines = listOfLines_.size();
+		StringBuilder sb = new StringBuilder();
 		
 		if (noOfLines > 0) {
 			for (int i = 0; i < noOfLines; i++) {
 				int index = i + 1;
-				System.out.printf(MESSAGE_DISPLAY_LINE, index, listOfLines_.get(i));
+				sb.append(String.format(MESSAGE_DISPLAY_LINE, index, listOfLines_.get(i)));
 			}
 		} else {
-			System.out.printf(MESSAGE_DISPLAY_FAIL, file_.getName());
+			sb.append(String.format(MESSAGE_DISPLAY_FAIL, file_.getName()));
 		}
+		
+		return sb.toString();
 	}
-	
-	
-	/* Execution Methods */
 	
 	/**
-	 * Reads in and execute respective commands until exit command is called.
+	 * Sorts the text file in alphabetical order according to the first word of every line
+	 * 
+	 * @return feedback message that lines are sorted
 	 */
-	public void run() {
-		
-		System.out.printf(MESSAGE_WELCOME, file_.getName());
-				
-        while (isRunning_) {      	
-        	System.out.printf(MESSAGE_ENTER_COMMAND);
-        	String command = sc.next();
-        	executeCommand(command);
-        }
+	public String sort() {
+		return "";
+		//return String.format(MESSAGE_SORTED, file_.getName());
 	}
-        	
-        	
+	
+	/**
+	 * Searches the text file for lines that contains the input word, and return those lines.
+	 * 
+	 * @param word
+	 * @return lines in text file that contain the input word
+	 */
+	public String search(String word) {
+		return "";
+	}
+	
+	       	
     /**
      * executes the respective functions according to the input command
      * 
-     *    @param command 	command input by user into the console
+     * @param command 	command input by user into the console
+     * @throws IOException 
      */
-	private void executeCommand(String command) {
+	String executeCommand(String command) throws IOException {
 		
-		if (command.equals(COMMAND_ADD)) {
-    		String addParam = sc.nextLine();
-			add(addParam.trim()); // trim is used to remove white space in front of the text to be added				
-    	} else if (command.equals(COMMAND_DELETE)) {
-    		delete(sc.nextInt());
-    	} else if (command.equals(COMMAND_CLEAR)) {
-    		clear();
-    	} else if (command.equals(COMMAND_DISPLAY)) {
-    		display();
-    	} else if (command.equals(COMMAND_EXIT)) {
-    		isRunning_ = false;
-    	} else {
-    		System.out.println(MESSAGE_INVALID_COMMAND);
-    	}
-    }   	
-		
+		String feedback = null;
 
-	public static void main(String[] args) {
-		
-		try {
-		TextBuddy tb = new TextBuddy(args[0]);
-		tb.run();
-		} 
-		
-		catch(ArrayIndexOutOfBoundsException e) {
-			System.out.println(MESSAGE_NO_FILE_INPUT);
+		if (command.equals(COMMAND_ADD)) {
+			String addParam = sc.nextLine();
+			feedback = add(addParam.trim()); // trim is used to remove white space in front of the text to be added				
+		} else if (command.equals(COMMAND_DELETE)) {
+			try {
+				feedback = delete(sc.nextInt());
+			}
+			catch (InputMismatchException e) {
+				showToUser(MESSAGE_INVALID_LINE_NUMBER);
+			}
+		} else if (command.equals(COMMAND_CLEAR)) {
+			feedback = clear();
+		} else if (command.equals(COMMAND_DISPLAY)) {
+			feedback = display();
+		} else if (command.equals(COMMAND_EXIT)) {
+			System.exit(0);
+		} else {
+			throw new Error("Unrecognized command type");
 		}
-		
-	}	
+		return feedback;
+    }   		
 }
