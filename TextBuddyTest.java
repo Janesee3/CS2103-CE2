@@ -22,7 +22,7 @@ public class TextBuddyTest {
 		tb1.executeCommand("add a");
 		tb1.executeCommand("add b");
 		tb1.executeCommand("sort");
-		String expected1 = "1. a\n" + "2. b\n" + "3. c";
+		String expected1 = "1. a\n" + "2. b\n" + "3. c\n";
 		assertEquals(expected1, tb1.executeCommand("display"));
 	
 		/* sort text file with only a single line */
@@ -37,11 +37,11 @@ public class TextBuddyTest {
 		TextBuddy tb3 = new TextBuddy("testSort3.txt");
 		
 		tb3.executeCommand("sort");
-		String expected3 = "testSort3.txt is empty";
+		String expected3 = "testSort3.txt is empty\n";
 		assertEquals(expected3, tb3.executeCommand("display"));
 		
 		/* test feedback message */
-		String expected4 = "testSort3.txt has been sorted";
+		String expected4 = "testSort3.txt has been sorted\n";
 		assertEquals(expected4, tb3.executeCommand("sort"));
 	}
 }

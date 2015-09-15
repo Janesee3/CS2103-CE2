@@ -37,20 +37,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class TextBuddy {
 	
 	/* Private Class Attributes */
-	
-	//private String fileName_;
 	private File file_;
 	private ArrayList<String> listOfLines_;
-	private boolean isRunning_;
 	
-	/* Static Utility */
-	
+	/* Static Utility */	
 	private static Scanner sc = new Scanner(System.in);
 	
 	/* Static String Constants */
@@ -63,6 +60,7 @@ public class TextBuddy {
 	private static final String MESSAGE_CLEAR = "all content deleted from %s\n";
 	private static final String MESSAGE_DISPLAY_LINE = "%d. %s\n";
 	private static final String MESSAGE_DISPLAY_FAIL = "%s is empty\n";
+	private static final String MESSAGE_SORTED = "%s has been sorted\n";
 	
 	
 	// Command Identifiers
@@ -71,6 +69,7 @@ public class TextBuddy {
 	private static final String COMMAND_CLEAR = "clear";
 	private static final String COMMAND_DISPLAY = "display";
 	private static final String COMMAND_EXIT = "exit";
+	private static final String COMMAND_SORT = "sort";
 	
 	
 	// Error/Exception Messages
@@ -78,7 +77,8 @@ public class TextBuddy {
 	private static final String MESSAGE_LINE_NOT_FOUND = "No such line in file!";
 	private static final String MESSAGE_NO_FILE_INPUT = "No .txt file inputed.";
 	private static final String MESSAGE_IOEXCEPTION = "IO exception encountered.";
-	private static final String MESSAGE_SORTED = null;
+	
+	
 	
 	public static void main(String[] args) throws IOException {
 		
@@ -87,8 +87,8 @@ public class TextBuddy {
 			showToUser(String.format(MESSAGE_WELCOME, args[0]));
 			while (true) {
 				showToUser(MESSAGE_ENTER_COMMAND);
-				String command = sc.next();
-				String feedback = tb.executeCommand(command);
+				String userCommand = sc.nextLine();
+				String feedback = tb.executeCommand(userCommand);
 				showToUser(feedback);
 			}
 		}
@@ -110,6 +110,25 @@ public class TextBuddy {
 	
 	public static void showToUser(String text) {
 		System.out.print(text);
+	}
+	
+	// returns first word of input text String.
+	// Pre-cond: first word in text is separated by " "
+	private static String getFirstWord (String text) {
+		return text.split(" ", 2)[0];
+	}
+	
+	// returns the subsequent string apart from the first word in input text
+	// Pre-cond: first word in text is separated by " " && subsequent words != null 
+	private static String getNextLine (String text) {
+		return text.split(" ", 2)[1];
+	}
+	
+	// returns the subsequent number right after the first word in input text.
+	// Pre-cond: there must be a number after the first word, and they are separated by " "
+	private static int getNextNumber (String text) {
+		String number = text.split(" ", 2)[1];
+		return Integer.valueOf(number);
 	}
 	
 	/**
@@ -197,7 +216,9 @@ public class TextBuddy {
 		// Use PrintWriter object to initiate a rewrite on the file, 
 		// effectively clearing it of its original content
 		PrintWriter pw = new PrintWriter(file_);
+		pw.close();
 		return String.format(MESSAGE_CLEAR, file_.getName());
+		
 	}
 	
 	/**
@@ -226,10 +247,18 @@ public class TextBuddy {
 	 * Sorts the text file in alphabetical order according to the first word of every line
 	 * 
 	 * @return feedback message that lines are sorted
+	 * @throws IOException 
 	 */
-	public String sort() {
-		return "";
-		//return String.format(MESSAGE_SORTED, file_.getName());
+	public String sort() throws IOException {
+		
+		Collections.sort(listOfLines_, String.CASE_INSENSITIVE_ORDER);
+		PrintWriter pw = new PrintWriter(file_);
+		for (int i = 0; i < listOfLines_.size(); i++) {
+			pw.println(listOfLines_.get(i));
+		}
+		pw.close();
+		
+		return String.format(MESSAGE_SORTED, file_.getName());
 	}
 	
 	/**
@@ -249,16 +278,16 @@ public class TextBuddy {
      * @param command 	command input by user into the console
      * @throws IOException 
      */
-	String executeCommand(String command) throws IOException {
+	String executeCommand(String fullcommand) throws IOException {
 		
 		String feedback = null;
-
+		String command = getFirstWord(fullcommand);
+		
 		if (command.equals(COMMAND_ADD)) {
-			String addParam = sc.nextLine();
-			feedback = add(addParam.trim()); // trim is used to remove white space in front of the text to be added				
+			feedback = add(getNextLine(fullcommand)); 		
 		} else if (command.equals(COMMAND_DELETE)) {
 			try {
-				feedback = delete(sc.nextInt());
+				feedback = delete(getNextNumber(fullcommand));
 			}
 			catch (InputMismatchException e) {
 				showToUser(MESSAGE_INVALID_LINE_NUMBER);
@@ -267,6 +296,8 @@ public class TextBuddy {
 			feedback = clear();
 		} else if (command.equals(COMMAND_DISPLAY)) {
 			feedback = display();
+		} else if (command.equals(COMMAND_SORT)) {
+			feedback = sort();
 		} else if (command.equals(COMMAND_EXIT)) {
 			System.exit(0);
 		} else {
