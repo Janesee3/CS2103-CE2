@@ -52,20 +52,26 @@ public class TextBuddyTest {
 		TextBuddy tb = new TextBuddy("testSearch.txt");
 		
 		tb.executeCommand("add apple orange mango");
-		String expected1 = "\" pear\" is cannot be found in any line";
+		String expected1 = "\"pear\" cannot be found in any line";
 		assertEquals(expected1, tb.executeCommand("search pear"));
 		
 		/* search for word that exists in multiple sentences */
 		tb.executeCommand("add an apple a day");
 		tb.executeCommand("add keeps the doctor away");
-		tb.executeCommand("add I like apples");
+		tb.executeCommand("add I like banana");
 		String expected2 = "apple orange mango\n" + "an apple a day\n";
 		assertEquals(expected2, tb.executeCommand("search apple"));
 		
+		/* search for word among lines with words that contain the input 
+		 * search word itself (eg. apple --> appletart)  */
+		tb.executeCommand("add I like appletart");
+		String expected3 = "apple orange mango\n" + "an apple a day\n";
+		assertEquals(expected3, tb.executeCommand("search apple"));
+		
 		/* search an empty file */
 		tb.executeCommand("clear");
-		String expected3 = "\" pear\" is cannot be found in any line";
-		assertEquals(expected3, tb.executeCommand("search pear"));
+		String expected4 = "\" pear\" is cannot be found in any line";
+		assertEquals(expected4, tb.executeCommand("search pear"));
 	}
 }
 	
